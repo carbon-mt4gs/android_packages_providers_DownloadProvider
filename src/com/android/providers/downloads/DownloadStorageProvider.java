@@ -120,6 +120,8 @@ public class DownloadStorageProvider extends DocumentsProvider {
     @Override
     public String createDocument(String docId, String mimeType, String displayName)
             throws FileNotFoundException {
+        displayName = FileUtils.buildValidFatFilename(displayName);
+
         if (Document.MIME_TYPE_DIR.equals(mimeType)) {
             throw new FileNotFoundException("Directory creation not supported");
         }
@@ -131,14 +133,7 @@ public class DownloadStorageProvider extends DocumentsProvider {
         // Delegate to real provider
         final long token = Binder.clearCallingIdentity();
         try {
-            displayName = removeExtension(mimeType, displayName);
-            File file = new File(parent, addExtension(mimeType, displayName));
-
-            // If conflicting file, try adding counter suffix
-            int n = 0;
-            while (file.exists() && n++ < 32) {
-                file = new File(parent, addExtension(mimeType, displayName + " (" + n + ")"));
-            }
+            final File file = FileUtils.buildUniqueFile(parent, mimeType, displayName);
 
             try {
                 if (!file.createNewFile()) {
